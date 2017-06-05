@@ -1,0 +1,226 @@
+---
+title: "Machine Learning Project"
+author: "Kyle Becker"
+date: "April 4, 2017"
+output: html_document
+---
+
+## Data
+
+The data used for this project was provided by the group of  research and development of groupware technologies (Ugulino, W.Cardador, D.; Vega, K.; Velloso, E.; Milidiu, R.; Fuks, H.,2012). This dataset was created through recording the activities of 4 healthy individuals over 8 hours of study. The goal of this assignment is using machine learning algorithms predict which of the 5 activities each participant is performing based on measurements provided by accelerometers.
+
+The dataset had all columns removed where NA was contained in all rows. Additionally certain columns existed in the training set but not in the testing set. Since these columns would not be useful in predicting in the test set (since they do not exist) they were removed from the training set. A summary of each variable is provided below.
+
+```{r echo=FALSE, include=FALSE}
+library(caret)
+library(stringi)
+
+#Individual models
+
+#Read data into R
+Training_Data <- read.csv("C:\\Users\\kbec\\Desktop\\Data Science Coures\\Machine Learning\\Assignment 4\\Training Data.csv")
+Testing_Data <- read.csv("C:\\Users\\kbec\\Desktop\\Data Science Coures\\Machine Learning\\Assignment 4\\Testing Data.csv")
+
+#Remove first 7 columns because this is background info
+Training_Data <- Training_Data[,8:160]
+Testing_Data <- Testing_Data[,8:160]
+
+# Remove columns were all rows are NA (not useful)
+Testing_Remove_NA_Columns <- names(Testing_Data[,colSums(is.na(Testing_Data)) !=nrow(Testing_Data)])
+
+#Find columns that are the same between training and testing
+Common_Columns <- subset(names(Training_Data), names(Training_Data) %in% Testing_Remove_NA_Columns)
+
+#Have Training and Testing only have columns that exist in both
+#Include classe and problem id because these are the same column
+Training_Data_Set <- Training_Data[, c(Common_Columns,"classe")]
+Testing_Data_Set <- Testing_Data[,c(Common_Columns,"problem_id")]
+
+#Ensure data sets have the same number of columns
+dim(Testing_Data_Set)
+dim(Training_Data_Set)
+```
+
+```{r, eval=TRUE}
+str(Training_Data_Set)
+```
+
+Once the data was preprocessed into the correct format a 30% sample size was taken for the training set. A 30% sample size was taken for processing reasons, normally a 70% training to 30% testing set would be taken but this resulted in too long of a processing time. The long processing time was due to the fact the computer being used for this analysis only had 8GB of ram.
+
+
+```{r, echo=TRUE, eval=FALSE}
+library(caret)
+library(stringi)
+
+#Individual models
+
+#Read data into R
+Training_Data <- read.csv("C:\\Users\\kbec\\Desktop\\Machine Learning\\Assignment 4\\Training Data.csv")
+Testing_Data <- read.csv("C:\\Users\\kbec\\Desktop\\Machine Learning\\Assignment 4\\Testing Data.csv")
+
+#Remove first 7 columns because this is background info
+Training_Data <- Training_Data[,8:160]
+Testing_Data <- Testing_Data[,8:160]
+
+# Remove columns were all rows are NA (not useful)
+Testing_Remove_NA_Columns <- names(Testing_Data[,colSums(is.na(Testing_Data)) !=nrow(Testing_Data)])
+
+#Find columns that are the same between training and testing
+Common_Columns <- subset(names(Training_Data), names(Training_Data) %in% Testing_Remove_NA_Columns)
+
+#Have Training and Testing only have columns that exist in both
+#Include classe and problem id because these are the same column
+Training_Data_Set <- Training_Data[, c(Common_Columns,"classe")]
+Testing_Data_Set <- Testing_Data[,c(Common_Columns,"problem_id")]
+
+#Ensure data sets have the same number of columns
+dim(Testing_Data_Set)
+dim(Training_Data_Set)
+
+#Create Training set that includes 30%
+#Create Testing set that includes 70% of data
+#Training should be 70% but my computer cannot handle the analysis
+Training_Partition <- createDataPartition(Training_Data_Set$classe, p=0.3, list = FALSE)
+Testing <- Training_Data_Set[-Training_Partition,]
+Training <- Training_Data_Set[Training_Partition,]
+```
+
+##Analysis
+The 30% sample size was then ran through 3 different machine learning models to determine which was most effective in predicting the desired outcome (classe - the activity being performed). The 3 models used to predict classe were random forest, linear discriminant analysis and gradient boosting machine. On the initial run of each algorithm default inputs were used in conjunction with k fold cross validation. K fold cross validation to ensure that the models did not overfit and were generalizable to the test set. A value of 10 was used for K with 1 repeat meaning the 30% training set was split up into 10 groups  which were separately trained and their results averaged. Once each model was trained using the training data the accuracy was measured against the remaining testing data to ensure the results were generalizable. The Results were measured using a confusion matrix which used accuracy of classification (predicted vs actual value of testing set). The results are displayed below. Using base parameters random forest was the most successful. The results are shown below.
+
+#Random Forest Confusion Matrix
+![](CM Individual.jpg)
+
+
+
+#Random For Model Accuracy
+![](Model Accuracy.png)
+
+The confusion matrix shows that there was not a very large amount of misclassification which is represented in the model accuracy score of 98.24%. Additionally the confidence interval shows that 95% of the models created using cross validation fell within an accuracy score of 97.9% and 98.54%. The p value is less than .05 showing the results were statistically significant. The Kappa statistic of 97.7% is extremely promising because it takes into account the possibility of this accuracy being observed by chance. 
+
+##Further Analysis
+In order to determine if other algorithms would be equally likely to achieve the same accuracy several other methods were tested. Specifically random forest, linear discriminant analysis and gradient boosting machines as well as with bootstrap aggregation with random forest and model stacking of random forest, linear discriminant analysis and gradient boosting together. The code for each model is shown below.
+
+```{r, echo=TRUE , eval=FALSE}
+#Individual Model
+
+#Using the caret package I apply the gradient boosting machine algorithm on the training data set
+GBM_1 <- train(classe~., method="gbm", data = Training, verbose=FALSE)
+
+#Using the caret package I apply the random forest algorithm on the training data set
+RF_1 <- train(classe~., method="rf", data =Training, trControl= trainControl(method = "repeatedcv", number = 10, repeats = 1))
+
+#Using the caret package I apply the linear discriminant analysis algorithm on the training data set
+LDA_1 <- train(classe~., method="lda", data=Training, trControl= trainControl(method = "repeatedcv", number = 10, repeats = 1))
+
+#Once each model has run I use each model to predict the classe for each record using the testing set
+GBM_Predict_1 <- predict(GBM_1, Testing)
+RF_Predict_1 <- predict(RF_1, Testing)
+LDA_Predict_1 <- predict(LDA_1, Testing)
+
+#After the predictions are finished a confusion matrix is made for each model displaying what the model predicted vs its actual classe in order to measure model accuracy
+GBM_CM <- confusionMatrix(GBM_Predict_1, Testing$classe)
+RF_CM <- confusionMatrix(RF_Predict_1, Testing$classe)
+LDA_CM <- confusionMatrix(LDA_Predict_1, Testing$classe)
+
+#Stacking Models
+
+#When stacking models since they are ultimately ran individually and then combined a validation set is required to test the result of the stacked models
+
+# 30% of the data is used for the validation set, 30% for the training set and 40% forr the testing because as mentioned there is an equipment limitation with the computer
+Training_Partition <- createDataPartition(Training_Data_Set$classe, p=0.7, list = FALSE)
+Validation <- Training_Data_Set[-Training_Partition,]
+Non_validation <- Training_Data_Set[Training_Partition,]
+Training_Testing_Partition <- createDataPartition(Non_validation$classe, p=0.3, list = FALSE)
+Training <- Non_validation[Training_Testing_Partition,]
+Testing <- Non_validation[-Training_Testing_Partition,]
+
+#Each model is trained using default parameters
+GBM_2 <- train(classe~., method="gbm", data = Training, verbose=FALSE, trControl= trainControl(method = "repeatedcv", number = 10, repeats = 1))
+
+RF_2 <- train(classe~., method="rf", data =Training, trControl= trainControl(method = "repeatedcv", number = 10, repeats = 1), VERBOSE=FALSE)
+
+LDA_2 <- train(classe~., method="lda", data=Training, trControl= trainControl(method = "repeatedcv", number = 10, repeats = 1), VERBOSE=FALSE)
+
+#Each model is used to create predicted values using the testing set
+GBM_Predict_2 <- predict(GBM_2, Testing)
+RF_Predict_2 <- predict(RF_2, Testing)
+LDA_Predict_2 <- predict(LDA_2, Testing)
+
+
+
+#Each prediction is combined into a dataframe
+DF <- data.frame(GBM_Predict_2, RF_Predict_2, LDA_Predict_2, classe=Testing$classe)
+
+#The dataframe is then ran through random forest using default parameters
+RF_Combo <- train(classe~., method="rf", data = DF, trControl= trainControl(method = "repeatedcv", number = 10, repeats = 1))
+
+#The model is then tested using the validation set
+#first the validation set is ran through each of the original models
+GBM_Predict_v <- predict(GBM_2, Validation)
+RF_Predict_v <- predict(RF_2, Validation)
+LDA_Predict_v <- predict(LDA_2, Validation)
+
+#Then the results are combined into a dataframe
+DF <- data.frame(GBM_Predict_2=GBM_Predict_v, RF_Predict_2=RF_Predict_v, LDA_Predict_2=LDA_Predict_v)
+
+#This dataframe is then used to predict using the stacked model
+RF_Combo_Predict <- predict(RF_Combo, DF)
+
+#The predicted results are then compared to the actual results of the validation set to determine accuracy
+RF_Combo_CM <- confusionMatrix(RF_Combo_Predict, Validation$classe)
+RF_Combo_CM
+
+#Bagging
+
+#The bagging library takes the predictors and output variable as different arguments so they are split out into different dataframes
+predictors <- Training[1:52]
+y <- Training$classe
+
+#Using the bag function these dataframes are passed followed by B which states the number of bootsrap aggregation samples
+
+#the model is fit using the fit function, they are predicted using the predict function and the results are aggregate using the aggregation function
+treebag <- bag(predictors, y, B=10, bagControl = bagControl(fit = ctreeBag$fit, predict = ctreeBag$pred, aggregate = ctreeBag$aggregate))
+
+#The model is then used to predict classes for the Testing data set
+treebag_predict <- predict(treebag, Testing)
+
+#A confusion matrix is then created comparing the predicted value vs the actual value to determine accuracy
+treebag_CM <- confusionMatrix(treebag_predict, Testing$classe)
+treebag
+
+```
+
+
+
+
+##Gradient Boosting Machine Accuracy
+![](GBM Accuracy.png)
+
+
+The gradient boosting machine individually was very close to random forest producing an accuracy level on the test set of 95.52% using default parameters. The kappa was also very high at 94.33%. The parameters that alter the results of the algorithm are shrinkage, number of trees, interaction depth and nminobsinnode. The shrinkage parameter determines how quickly the algorithm learns, a high value reduces computational requirements but is prone to overfitting, the number of trees allows the algorithm to determine more complicated relationships if the number of trees is larger. If the shrinkage rate is low the number of trees will have to be increased since the algorithm learns slower. Interaction depth is the number of splits performed on a tree once again if this is increased computationally it is taxing but it will determine more complex relationships. Lastly nminobsinnode is the minimum number of observations required in the terminal node. In order to optimize the model a tuning grid was created which decreased the learning rate lower than the default 0.1 and increased the number of trees created. The remaining two parameters were held constant at a default. The final model arrived at the default learning rate (shrinkage) of 0.1 but used 500 trees rather than the default 150. This allowed the model to reach an accuracy level of 98.62% on the testing set higher than random forest. Out of the 10 cross fold validation the accuracy score fell with a 95% confidence interval of 98.41% and 98.81% once again higher than random forest.  The P value was less than 0.05 showing the results were statistically significant.  Lastly the most important statistic Kappa value was also higher than random forest at 98.26%. This is most important because as previously mentioned this takes into account the probability of the algorithm arriving at the results by random chance. THe expected out of sample error rate is therefore less than 1% 1-accuracy. The code is shown below.
+
+
+```{r, echo=TRUE, eval=FALSE}
+#GBM_GRID creates a list of parameters to be tested in the model creation process
+GBM_Grid <- expand.grid(interaction.depth = 6, n.trees=c(100,300,500), shrinkage = seq(.01,.1,.03), n.minobsinnode = 10)
+
+#These paremeters  are then passed to the tuneGrid parameter to be tested in the GBM Model
+GBM_Optimize <-  train(classe~., method="gbm", data = Training, verbose=FALSE, trControl= trainControl(method = "repeatedcv", number = 10, repeats = 1), tuneGrid=GBM_Grid)
+
+#The model is then used on the testing set to predict the classe of each record
+GBM_Predict_Optimize <- predict(GBM_Optimize, Testing)
+
+#A confusion matrix is then used to determine the accuracy using predicted vs actual value
+GBM_Optimize_CM <- confusionMatrix(GBM_Predict_Optimize, Testing$classe)
+
+```
+
+
+Linear discriminant analysis was not pursued further because it did not perform well compared to the other models at 70.38% and a Kappa value of 62.56%. The decision tree model through bootstrap aggregation was somewhat effective producing an accuracy of 92.58% and a Kappa score of 90.60% . Lastly stacking the models through random forest was almost as effective as the optimized parameters of the gradient boosting machine producing an accuracy of 98.39% and a Kappa value of 97.96%. However, this algorithm if deployed would be computationally much more taxing so the optimized gradient boosting machine model was chosen as the most efficient classifier.
+
+
+
+
+
+
