@@ -1,0 +1,77 @@
+---
+title: "Shiny App Pitch"
+author: "Kyle Becker"
+date: "May 21, 2017"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Linear Regression Web Application
+
+- The idea for this application is it will allow users to perform 
+  linear regresssion without having to code
+- Additionally this application incorporates machine learning through 
+  Ridge Regression to determine the optimal number of features to include
+- Once the model is created it also allows the user to upload test data 
+  and use the model to predict outcomes for up to 1000 observations 
+- Please note that in order for this application to work all variables 
+  should be numeric
+
+## Inputs Part 1
+
+**Regression Output Tab**
+
+- Input 1 (Enter the Location of the Data File) - In this field the user clicks 
+  browse and selects the file they wish to import then moves the use default 
+  data drop down to no and clicks import
+- Input 2 (Number of Predictors in Linear Regression) - In this field the user 
+  can click checkboxes to determine which feature from the dataframe to include 
+  in the linear regression
+- Input 3 (select Variable to Predict) - This drop down list allows the user 
+  to select the output or dependant variable they would like to predict
+
+## Input Part 2
+
+**Correlation Comparison Tab**
+
+- Input 4 (Select the variable to be Predicted) - Using the dropdown list select 
+  the output variable to be predicted using linear regression
+- Input 5 and 6 (Correlation Comparison Controls) - Select an input and the 
+  transformation you want to be performed in order to determine correlation with 
+  the previously selected dependant variable
+
+**Ridge Regression Tab**
+
+-Using the variables selected in the Regression Output tab a ridge regression is 
+  performed and the optimal lamda automatically fed into the prediction model
+-Looking at the Betas seen below the graph one can infer what the most important 
+  variable is based on size
+
+
+**Predicted Test Data Tab**
+
+- Input 7 (Enter the Location of Testing Data) - see above
+- Input 8 (Enter the amount of predicted values you want to see) - Select the 
+  number of observations in the test set to be predicted using the model
+
+## Output Variables
+- Tab 1 Regression Output displays the output of the regression model from Inputs 1-3
+- Tab 2 Correlation Comparison tab displays the correlation between the input variable 
+  supplied by input 6, the transformation supplied in Input 7 and the output variable supplied by Input 4
+- The results are displayed on a graph with R Squared Coefficient
+- Tab 3 Regression Output displays the estimation of lamda that was used for Ridge Regression as well as 
+  the Betas determined by the ridge regression model
+- Tab 4 Predicted Test Data shows the predicted values based on the test data supplied as well as on 
+  average how far they are off 
+
+## Benefits of Shiny Appliaction
+- This App will allow users that are unfamiliar with code implement a ridge regression as well as 
+  see how different inputs will effect the result
+- Additionally the application allows individuals to explore how variable transformation might 
+  increase the predictability of a linear model
+- Lastly through the uploading of a test data set the user can test generalizability of the model 
+  by predicting known outcomes of a different data set
+- Shiny Application located at https://kylebecker.shinyapps.io/linear_regression_shiny_application/ 

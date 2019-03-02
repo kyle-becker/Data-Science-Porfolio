@@ -24,14 +24,15 @@ shinyUI(fluidPage(
       uiOutput("Predictors"),
       uiOutput("Output_Variable"),
       h3("Correlation Comparison Controls"),
-      selectInput("Transformation", "Select variable transformation", c("None"="None", "Square Root"="Square Root", "Log"="Log", "Power"="Power")),
+      selectInput("Transformation", "Select variable transformation", c("None"="None", 
+                  "Square Root"="Square Root", "Log"="Log", "Power"="Power")),
       uiOutput("Y_Variable_Correlation"),
       h3("Predicted Test Data Controls"),
-      fileInput("Test_Data_File", "Enter Location of Test Data File:", accept =  c("text/csv",
-                                                                         "text/comma-separated-values,text/plain",
-                                                                         ".csv")), 
+      fileInput("Test_Data_File", "Enter Location of Test Data File:", accept =  
+                  c("text/csv", "text/comma-separated-values,text/plain",".csv")), 
       actionButton("Import_Test_Data", "Import Test Data Set"),
-      sliderInput("Predicted_Values", "Enter the amount of predicted values you want to see", min = 1, max = 1000, value = c(1,10))
+      sliderInput("Predicted_Values", "Enter the amount of predicted values you 
+                  want to see", min = 1, max = 1000, value = c(1,10))
       
     ),
     
@@ -42,13 +43,16 @@ shinyUI(fluidPage(
       tabPanel("Regression Output",  titlePanel("Regression Output"),
       verbatimTextOutput(outputId = "Summary_coeff"),
       verbatimTextOutput(outputId = "Read_Data")),
-        tabPanel("Correlation Comparison",titlePanel("Correlation Comparison"),
+        tabPanel("Correlation Comparison",
+                 titlePanel("Correlation Comparison"),
         plotOutput("Scatter"),
         verbatimTextOutput(outputId = "R_Squared")),
-          tabPanel("Ridge Regression Output",titlePanel("Ridge Regression Output"),
+          tabPanel("Ridge Regression Output",
+                   titlePanel("Ridge Regression Output"),
           plotOutput("PLOT_LR"),
           verbatimTextOutput(outputId = "RIDGE")),
-            tabPanel("Predicted Test Data",titlePanel("Prediction Using Test Data"),
+            tabPanel("Predicted Test Data",
+                     titlePanel("Prediction Using Test Data"),
             verbatimTextOutput(outputId = "PREDICT"))
       )
       
@@ -95,7 +99,10 @@ shinyServer(function(input, output) {
         Data <- Read_Data()  
 
     
-    Linear_Model <- lm(as.formula(paste0(input$Output_Variable,"~", paste( subset(input$Predictors, !(input$Predictors==input$Output_Variable)) , collapse = "+"))), data=Data)
+    Linear_Model <- lm(as.formula(paste0(input$Output_Variable,"~", 
+                                         paste( subset(input$Predictors, 
+                                        !(input$Predictors==input$Output_Variable)) , 
+                                        collapse = "+"))), data=Data)
     summary(Linear_Model)
     
     
@@ -103,22 +110,32 @@ shinyServer(function(input, output) {
 
     Scatter <- reactive({
     ifelse(input$Default_Data=="Yes", Data <- Boston, Data <- Read_Data())
-    Corr <- lm(as.formula(paste0(input$Y_Variable_Correlation,"~",input$Output_Variable)), data = Data)
+    Corr <- lm(as.formula(paste0(input$Y_Variable_Correlation,"~",
+                                 input$Output_Variable)), data = Data)
     Corr <- summary(Corr)
     R_Squared <- Corr$r.squared
     
     ifelse(input$Transformation=="Log", 
-    P <- ggplot(data = Data, aes(log(Data[[input$Y_Variable_Correlation]]), Data[[input$Output_Variable]])),
+    P <- ggplot(data = Data, aes(log(Data[[input$Y_Variable_Correlation]]), 
+                                 Data[[input$Output_Variable]])),
             
-            ifelse(input$Transformation=="Square Root", P <- ggplot(data = Data, aes(sqrt(Data[[input$Y_Variable_Correlation]]), Data[[input$Output_Variable]])),
+            ifelse(input$Transformation=="Square Root", P <- 
+                     ggplot(data = Data, aes(sqrt(Data[[input$Y_Variable_Correlation]]), 
+                                             Data[[input$Output_Variable]])),
                    
-                   ifelse(input$Transformation=="Power", P <- ggplot(data = Data, aes(Data[[input$Y_Variable_Correlation]]^2, Data[[input$Output_Variable]])),
+                   ifelse(input$Transformation=="Power", P <- ggplot(data = Data, 
+                                                        aes(Data[[input$Y_Variable_Correlation]]^2, 
+                                                            Data[[input$Output_Variable]])),
                           
-                          P <- ggplot(data = Data, aes(Data[[input$Y_Variable_Correlation]], Data[[input$Output_Variable]])))))
+                          P <- ggplot(data = Data, aes(Data[[input$Y_Variable_Correlation]], 
+                                                       Data[[input$Output_Variable]])))))
     
     
     
-    P + geom_point() + xlab(input$Y_Variable_Correlation) + ylab(input$Output_Variable) + ggtitle(paste(input$Y_Variable_Correlation, "Vs.", input$Output_Variable)) + theme(plot.title = element_text(hjust = 0.5)) + geom_smooth(method = "lm") + geom_text(x=mean(input$Y_Variable_Correlation),y=mean(input$Output_Variable), label=format(R_Squared, digits = 3), parse = TRUE)
+    P + geom_point() + xlab(input$Y_Variable_Correlation) + ylab(input$Output_Variable) 
+    + ggtitle(paste(input$Y_Variable_Correlation, "Vs.", input$Output_Variable)) + 
+      theme(plot.title = element_text(hjust = 0.5)) + geom_smooth(method = "lm") + geom_text(x=mean(input$Y_Variable_Correlation),y=mean(input$Output_Variable), 
+                            label=format(R_Squared, digits = 3), parse = TRUE)
     
           
         
@@ -128,7 +145,8 @@ shinyServer(function(input, output) {
     ifelse(input$Default_Data=="Yes", Data <- Boston, Data <- Read_Data())
     
      
-    Corr <- lm(as.formula(paste0(input$Y_Variable_Correlation,"~",input$Output_Variable)), data = Data)
+    Corr <- lm(as.formula(paste0(input$Y_Variable_Correlation,"~",input$Output_Variable)), 
+               data = Data)
     Corr <- summary(Corr)
     as.character(paste('R Squared:',Corr$r.squared))})
     
@@ -146,7 +164,8 @@ shinyServer(function(input, output) {
       y <- as.matrix(Data[,colnames(Data)==input$Output_Variable])
       x <-  as.matrix(Data[,!colnames(Data)==input$Output_Variable])
       cv.ridge <- cv.glmnet(x, y, alpha=0, standardize=TRUE)
-      Ridge_Regression <- glmnet(x,y,family="gaussian", standardize=TRUE, alpha=0, lambda=cv.ridge$lambda.1se)
+      Ridge_Regression <- glmnet(x,y,family="gaussian", standardize=TRUE, alpha=0, 
+                                 lambda=cv.ridge$lambda.1se)
       Ridge_Regression$beta
     })
     
@@ -156,11 +175,13 @@ shinyServer(function(input, output) {
      y <- as.matrix(Data[,colnames(Data)==input$Output_Variable])
      x <-  as.matrix(Data[,!colnames(Data)==input$Output_Variable])
      cv.ridge <- cv.glmnet(x, y, alpha=0, standardize=TRUE)
-     Ridge_Regression <- glmnet(x,y,family="gaussian", standardize=TRUE, alpha=0, lambda=cv.ridge$lambda.1se)
+     Ridge_Regression <- glmnet(x,y,family="gaussian", standardize=TRUE, alpha=0, 
+                                lambda=cv.ridge$lambda.1se)
      Data_Testx <-  as.matrix(Data_Test[,!colnames(Data_Test)==input$Output_Variable])
      
     PR <- predict.glmnet(Ridge_Regression, newx = as.matrix(Data_Testx),s="lambda min")
-    DF <- data.frame(Predicted=PR, Actual=Data_Test[input$Output_Variable], Difference=PR-Data_Test[input$Output_Variable])
+    DF <- data.frame(Predicted=PR, Actual=Data_Test[input$Output_Variable], 
+                     Difference=PR-Data_Test[input$Output_Variable])
     names(DF) <- c("Predicted", "Actual", "Difference")
     DF[input$Predicted_Values[1]:input$Predicted_Values[2],]
     
@@ -179,7 +200,8 @@ shinyServer(function(input, output) {
   
   output$Predictors <- renderUI({
     ifelse(input$Default_Data=="Yes", Data <- Boston, Data <- Read_Data())
-    checkboxGroupInput("Predictors", "Number of Predictors in Linear Regression:", choices =names(Data), selected = names(Data))})
+    checkboxGroupInput("Predictors", "Number of Predictors in Linear Regression:", 
+                       choices =names(Data), selected = names(Data))})
   
   output$Output_Variable <- renderUI({
     ifelse(input$Default_Data=="Yes", Data <- Boston, Data <- Read_Data())
